@@ -6,23 +6,30 @@
 # include <fstream>
 # include <string>
 # include <vector>
+# include <thread>
 class Analyzer : public QObject
 {
     Q_OBJECT
     QCommandLineParser pParser{};
     std::fstream pFile;
-    QStringList pLines;
+    QStringList ShownLines;
 public:
     explicit Analyzer(QObject *parent = nullptr);
     void SetFile() noexcept;
     void Analyze();
-    QStringList getPLines() const;
-    void setPLines(const QStringList &newPLines);
+    void setShownLines(const QStringList &newShownLines);
+    std::thread Worker{};
 
+    std::vector<std::vector<std::string>> Tokens{};
+    QStringList getShownLines() const;
+
+
+    Q_INVOKABLE void mFilter(QString Filter);
+    Q_INVOKABLE void mReset();
 signals:
-    void pLinesChanged();
+    void ShownLinesChanged();
 private:
-    Q_PROPERTY(QStringList pLines READ getPLines WRITE setPLines NOTIFY pLinesChanged FINAL)
+    Q_PROPERTY(QStringList pLines READ getShownLines WRITE setShownLines NOTIFY ShownLinesChanged FINAL)
 };
 
 #endif // ANALYZER_HPP

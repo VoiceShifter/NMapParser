@@ -1,5 +1,5 @@
 #include "Analyzer.hpp"
-
+# include <sstream>
 
 
 Analyzer::Analyzer(QObject *parent)
@@ -17,6 +17,12 @@ Analyzer::Analyzer(QObject *parent)
         qDebug() << "Opened file\n";
         Analyze();
     }
+    // Worker = std::thread([&]{
+    //     for (size_t Index{0}; Index < 200; ++Index)
+    //     {
+    //         Tokens[Index].reserve(5);;
+    //     }
+    // });
 }
 
 void Analyzer::SetFile() noexcept
@@ -27,9 +33,10 @@ void Analyzer::SetFile() noexcept
 void Analyzer::Analyze()
 {
     std::string Buffer{};
-    pLines.reserve(250);
+    ShownLines.reserve(250);
+
     bool Switch{};
-    for(;std::getline(pFile, Buffer);)
+    for(size_t Index{};std::getline(pFile, Buffer);)
     {
         if (Buffer.substr(0, 7) == "|   cpe")
         {
@@ -43,9 +50,68 @@ void Analyzer::Analyze()
         }
         if (Switch)
         {
-            pLines.append(Buffer.substr(7).c_str());
-            qDebug() << Buffer << '\n';
+
+            ShownLines.append(Buffer.substr(7).c_str());
+            char const * Delim = "( ) (*) \t | ";
+            char * Token {std::strtok(const_cast<char*>(Buffer.c_str()), Delim)};
+            Tokens.resize(Index + 1);
+            for (;Token!=nullptr;)
+            {
+                qDebug() << Token;
+                if (*Token == '_')
+                {
+                    Token=std::strtok(nullptr, Delim);
+                    continue;
+                }
+                Tokens[Index].push_back(Token);
+                Token=std::strtok(nullptr, Delim);
+            }
+            ++Index;
+
         }
+
     }
-    emit pLinesChanged();
+    qDebug() << Tokens.size() << " - Tokens size";
+    emit ShownLinesChanged();
+}
+
+void Analyzer::mFilter(QString Filter)
+{
+    float lFilter;
+    try {
+        lFilter = std::stof(Filter.toStdString());
+    } catch (...)
+    {
+        qDebug() << "Enter something normal";
+        return;
+    }
+    ShownLines.clear();
+    std::stringstream NewString{};
+    for (size_t Index{}; Index < Tokens.size(); ++Index)
+    {
+
+        try {
+            if(std::stof((Tokens[Index][1])) >= lFilter)
+            {
+                for (size_t iIndex{}; iIndex < Tokens[Index].size(); ++iIndex)
+                    NewString << Tokens[Index][iIndex] << '\t';
+                ShownLines.append(NewString.str().c_str());
+                NewString.str("");
+            }
+        } catch (...)
+        {
+            for (const auto& Iterator : Tokens[Index])
+                qDebug() << Iterator << " - broken line";
+            qDebug() << Index << " - broken index";
+            return;
+        }
+
+
+    }
+    emit ShownLinesChanged();
+}
+
+void Analyzer::mReset()
+{
+    mFilter("0");
 }

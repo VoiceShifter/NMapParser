@@ -1,14 +1,16 @@
 # include "Analyzer.hpp"
 
-QStringList Analyzer::getPLines() const
+QStringList Analyzer::getShownLines() const
 {
-    return pLines;
+    return ShownLines;
 }
 
-void Analyzer::setPLines(const QStringList &newPLines)
+
+
+void Analyzer::setShownLines(const QStringList &newShownLines)
 {
-    if (pLines == newPLines)
+    if (ShownLines == newShownLines)
         return;
-    pLines = newPLines;
-    emit pLinesChanged();
+    ShownLines = newShownLines;
+    emit ShownLinesChanged();
 }
